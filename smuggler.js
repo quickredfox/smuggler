@@ -28,7 +28,7 @@
 (function() {
     if (undefined === window.Smuggler) window.Smuggler = {};
     /*
-    * These Method Scoped Constants make Smuggler.js Faster.
+    * These "Method Scoped Constants" make Smuggler.js Faster.
     */
     // empty function 
     var K = function() {}
