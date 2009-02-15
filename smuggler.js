@@ -25,12 +25,12 @@
    OTHER DEALINGS IN THE SOFTWARE.
 */
 // Tested in IE6, Opera 9.20, Firefox 3.0.5, Safari
-(function() {
+ (function() {
     if (undefined === window.Smuggler) window.Smuggler = {};
     /*
     * These "Method Scoped Constants" make Smuggler.js Faster.
     */
-    // empty function 
+    // empty function
     var K = function() {}
     // default settings to merge with provided options
     var DEFAULTS = {
@@ -40,15 +40,15 @@
         ensure: null,
         source: ''
     };
-    // And object to contain the script URL that have been 
+    // And object to contain the script URL that have been
     // loaded
     var LOADED = {};
-    // Keeps trac of the loading state of a script before 
+    // Keeps trac of the loading state of a script before
     // fetching the next one.
-    var LOADING_STATE = false;
+    var LOADING_STATE = 'ready';
     // Having this as a constant instead of using 0.1 in each setTimeout call
     // seems to make things a wee bit faster according to jslitmus
-    var SHORT_TIMEOUT = 0.1;
+    var SHORT_TIMEOUT = 1;
 
     /*   
     * Tested against multiple approaches, this way seemed the fastest,
@@ -87,7 +87,8 @@
         s.type = 'text/javascript';
         // Uncomment the last part if you're having trouble with refreshes
         // while developing your whatever.
-        s.src =  url;// + '?'+(new Date()).getTime() 
+        s.src = url;
+        // + '?'+(new Date()).getTime()
         if (undefined === s.onreadystatechange) s.onload = function() {
             callback();
         }
@@ -97,21 +98,23 @@
         document.getElementsByTagName('head')[0].appendChild(s);
         return s;
     };
+
     /* 
     * Gets all the document's script nodes as an Array instead of a Nodelist
-    */ 
+    */
     function getScripts() {
         try {
             return Array.prototype.slice.call(document.getElementsByTagName('script'));
         } catch(E) {
             //slower for IE
-            var scrpts = [];
+            var scripts = [];
             for (var i = 0, node; node = document.getElementsByTagName('script')[i++];) {
-                scrpts.push(node);
+                scripts.push(node);
             };
-            return scrpts;
+            return scripts;
         }
     }
+
     /*
     * If a path has been specified as argument, grab the argument and 
     * set it up for import
@@ -143,12 +146,13 @@
             if (options.constructor == Array) {
                 Smuggler.fetch(options.shift());
                 if (options.length > 0) Smuggler.fetch(options);
+                return options;
             } else {
                 var tag,
                 options = setup(options);
                 if (!LOADED[options.source]) {
-                    if (!LOADING_STATE) {
-                        LOADING_STATE = true;
+                    if (LOADING_STATE != 'loading') {
+                        LOADING_STATE = 'loading';
                         options.onStart();
                         tag = makeAndAppendScriptTag(options.source,
                         // Called when script tag has finished loading.
@@ -158,18 +162,15 @@
                             },
                             SHORT_TIMEOUT);
                             try {
-
                                 if ((typeof options.ensure == 'string') && !ensure(options.ensure)) {
-                                    console.debug(ensure(options.ensure));
                                     return options.onFail(options);
                                 }
-
                             } catch(E) {
                                 options.error = E;
                                 return options.onFail(options);
                             }
                             LOADED[options.source] = true;
-                            LOADING_STATE = false;
+                            LOADING_STATE = 'ready';
                             return options.onComplete(options);
                         });
                     } else {
@@ -188,7 +189,7 @@
 
     setTimeout(function() {
         if (!document || (document && !document.getElementsByTagName('head'))) {
-            setTimeout(arguments.callee, 1)
+            setTimeout(arguments.callee, SHORT_TIMEOUT)
         } else {
             loadPath();
         }
